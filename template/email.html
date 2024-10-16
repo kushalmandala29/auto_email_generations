@@ -126,24 +126,24 @@
         </div>
         <div class="email-body">
             <div class="input-group">
-                <input type="text" class="email-input" placeholder="To">
+                <input type="text" id="to" class="email-input" placeholder="To">
             </div>
             <div class="input-group">
-                <input type="text" class="email-input" placeholder="Subject">
+                <input type="text" id="subject" class="email-input" placeholder="Subject">
             </div>
             <div class="input-group">
-                <textarea class="email-textarea" placeholder="Write your message here..."></textarea>
+                <textarea id="message" class="email-textarea" placeholder="Write your message here..."></textarea>
             </div>
             <div class="email-actions">
                 <div class="action-buttons">
-                    <button class="action-button send-button">
+                    <button class="action-button send-button" onclick="sendEmail()">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <line x1="22" y1="2" x2="11" y2="13"></line>
                             <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
                         </svg>
                         Send
                     </button>
-                    <button class="action-button generate-button">
+                    <button class="action-button generate-button" onclick="sendEmail()" >
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M15 4V2"></path>
                             <path d="M15 16v-2"></path>
@@ -158,13 +158,40 @@
                         Generate
                     </button>
                 </div>
-                <button class="attach-button">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
-                    </svg>
-                </button>
             </div>
         </div>
     </div>
+
+    <div id="result"></div>
+
+    <script>
+        function sendEmail() {
+            const to = document.getElementById('to').value;
+            const subject = document.getElementById('subject').value;
+            const message = document.getElementById('message').value;
+
+            // Send the collected data to the server
+            fetch('/send_email', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ to, subject, message }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('result').innerHTML = `
+                    <h3>Email Sent:</h3>
+                    <p>To: ${data.data.to}</p>
+                    <p>Subject: ${data.data.subject}</p>
+                    <p>Message: ${data.data.message}</p>
+                `;
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+                document.getElementById('result').innerHTML = 'An error occurred while sending the email.';
+            });
+        }
+    </script>
 </body>
 </html>
