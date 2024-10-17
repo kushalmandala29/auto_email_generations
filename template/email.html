@@ -67,7 +67,9 @@
             border-radius: 0.375rem;
             font-size: 1rem;
             resize: none;
+            overflow-y: hidden;
             height: 10rem;
+            min-height: 3rem;
         }
         .email-actions {
             display: flex;
@@ -132,7 +134,7 @@
                 <input type="text" id="subject" class="email-input" placeholder="Subject">
             </div>
             <div class="input-group">
-                <textarea id="message" class="email-textarea" placeholder="Write your message here..."></textarea>
+                <textarea id="message" class="email-textarea" placeholder="Write your message here..." oninput="autoResize(this)" ></textarea>
             </div>
             <div class="email-actions">
                 <div class="action-buttons">
@@ -165,6 +167,10 @@
     <div id="result"></div>
 
     <script>
+        function autoResize(textarea) {
+            textarea.style.height = 'auto';
+            textarea.style.height = textarea.scrollHeight + 'px';
+        }
         function sendEmail() {
             const to = document.getElementById('to').value;
             const subject = document.getElementById('subject').value;
@@ -180,16 +186,16 @@
             })
             .then(response => response.json())
             .then(data => {
-                document.getElementById('result').innerHTML = `
-                    <h3>Email Sent:</h3>
-                    <p>To: ${data.data.to}</p>
-                    <p>Subject: ${data.data.subject}</p>
-                    <p>Message: ${data.data.message}</p>
-                `;
+                document.getElementById('message').value = `
+Email Sent:
+To: ${data.data.to}
+Subject: ${data.data.subject}
+Message: ${data.data.message}`;
+            autoResize(document.getElementById('message'));
             })
             .catch((error) => {
                 console.error('Error:', error);
-                document.getElementById('result').innerHTML = 'An error occurred while sending the email.';
+                document.getElementById('result').value = 'An error occurred while sending the email.';
             });
         }
     </script>
