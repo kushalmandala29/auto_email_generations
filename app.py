@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify, send_from_directory,render_template_string
 from flask_cors import CORS
 import os
-from template.generate import generate
+from model.generate import generate
 import sys
 # print(sys.path)
 app = Flask(__name__)
@@ -9,7 +9,7 @@ CORS(app)
 
 @app.route('/')
 def serve_html():
-    return send_from_directory('.', 'template/email.html')
+    return send_from_directory('.', 'template/test3.html')
 
 
 
@@ -22,11 +22,7 @@ def send_email():
     subject = data.get('subject')
     message = data.get('message')
     
-    # Simulate sending the email (replace this with actual email sending logic)
-    print(f"Sending email to {to}")
-    print(f"Subject: {subject}")
-    print(f"Message: {message}")
-    
+ 
     # Simulate a successful email sending response
     response = {
         "status": "success",

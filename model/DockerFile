@@ -1,0 +1,23 @@
+# Use an official Python image as the base
+FROM python:3.10-slim
+
+# Set environment variables for non-interactive installation
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Set the working directory inside the container to /app
+WORKDIR /app
+
+# Copy the requirements.txt file from the root into the container
+COPY requirements.txt .
+
+# Install Python dependencies from requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy the entire model and template directories into the container
+COPY model ./model
+COPY template ./template
+
+RUN ollama pull tinyllama  # Replace this with the model you want
+
+# Set the command to run your main script
+CMD ["python", "app.py"]

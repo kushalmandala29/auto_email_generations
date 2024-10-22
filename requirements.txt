@@ -1,6 +1,12 @@
 transformers 
-datasets
+
 torch
 torchvision
 pandas
-dotenv
+# dotenv
+langchain_core
+flask
+langchain_ollama
+Flask-Cors
+# sys
+ollama-cli
