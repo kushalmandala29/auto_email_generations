@@ -18,14 +18,15 @@ jobs:
 
     - name: Sync model and template files to EC2
       env:
-        SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
-        SSH_HOST: ${{ secrets.EC2_PUBLIC_IP }}
+        SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}  # RSA Private Key stored in Secrets
+        SSH_HOST: ${{ secrets.EC2_PUBLIC_IP }}       # Public IP of your EC2 instance
       run: |
+        # Write the private key from GitHub secrets to a temporary file
         echo "${SSH_PRIVATE_KEY}" > key.pem
-        chmod 600 key.pem
+        chmod 600 key.pem  # Ensure the private key has the correct permissions
 
-        # Sync model and template files to EC2 instance
-        rsync -avz -e "ssh -o StrictHostKeyChecking=no -i aws_secreat_keys/new_pair.pem" model/ template/ ec2-user@${SSH_HOST}:Email_generator/
+        # Sync model and template files to the EC2 instance using rsync
+        rsync -avz -e "ssh -o StrictHostKeyChecking=no -i key.pem" model/ template/ ec2-user@${SSH_HOST}:/home/ec2-user/Email_generator/
 
     - name: Clean up
-      run: rm key.pem
+      run: rm key.pem  # Remove the temporary key file after the operation
