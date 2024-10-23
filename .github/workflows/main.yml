@@ -25,8 +25,11 @@ jobs:
         echo "${SSH_PRIVATE_KEY}" > key.pem
         chmod 600 key.pem  # Ensure the private key has the correct permissions
 
-        # Sync model and template files to the EC2 instance using rsync
-        rsync -avz -e "ssh -o StrictHostKeyChecking=no -i key.pem" model/ template/ {user_name}@${SSH_HOST}:/home/ec2-user/Email_generator/
+        # Create the Email_generator directory on the EC2 instance if it doesn't exist
+        ssh -o StrictHostKeyChecking=no -i key.pem ubuntu@${SSH_HOST} "mkdir -p /home/ubuntu/Email_generator/"
+
+        # Sync model and template files to the EC2 instance
+        rsync -avz -e "ssh -o StrictHostKeyChecking=no -i key.pem" model/ template/ ubuntu@${SSH_HOST}:/home/ubuntu/Email_generator/
 
     - name: Clean up
       run: rm key.pem  # Remove the temporary key file after the operation
