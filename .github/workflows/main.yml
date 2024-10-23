@@ -1,4 +1,4 @@
-name: Deploy to AWS
+name: Deploy to EC2
 
 on:
   push:
@@ -10,49 +10,22 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
+    - name: Checkout source code
       uses: actions/checkout@v3
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v2
+    - name: Install rsync
+      run: sudo apt-get install -y rsync
 
-    - name: Log in to Amazon ECR
+    - name: Sync model and template files to EC2
       env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        AWS_REGION: ${{ secrets.AWS_REGION }}
-        AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}  # Define AWS Account ID as a secret
+        SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
+        SSH_HOST: ${{ secrets.EC2_PUBLIC_IP }}
       run: |
-        aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+        echo "${SSH_PRIVATE_KEY}" > key.pem
+        chmod 600 key.pem
 
-    - name: Build Docker image
-      run: |
-        docker build -t your-app-image-name:latest .
+        # Sync model and template files to EC2 instance
+        rsync -avz -e "ssh -o StrictHostKeyChecking=no -i aws_secreat_keys/new_pair.pem" model/ template/ ec2-user@${SSH_HOST}:Email_generator/
 
-    - name: Tag Docker image
-      env:
-        AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
-        AWS_REGION: ${{ secrets.AWS_REGION }}
-      run: |
-        docker tag your-app-image-name:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/your-ecr-repo:latest
-
-    - name: Push Docker image to ECR
-      env:
-        AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
-        AWS_REGION: ${{ secrets.AWS_REGION }}
-      run: |
-        docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/your-ecr-repo:latest
-
-    - name: SSH to EC2 and Deploy Docker Container
-      env:
-        AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
-        AWS_REGION: ${{ secrets.AWS_REGION }}
-        EC2_PUBLIC_IP: ${{ secrets.EC2_PUBLIC_IP }}  # Define EC2 Public IP as a secret
-      run: |
-        # SSH into your EC2 instance and pull the new Docker image, then restart the container
-        ssh -o "StrictHostKeyChecking=no" -i ~/.ssh/your-ec2-key.pem ec2-user@$EC2_PUBLIC_IP << 'EOF'
-          docker pull $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/your-ecr-repo:latest
-          docker stop your-container-name || true
-          docker rm your-container-name || true
-          docker run -d -p 80:80 --name your-container-name $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/your-ecr-repo:latest
-        EOF
+    - name: Clean up
+      run: rm key.pem
