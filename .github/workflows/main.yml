@@ -26,7 +26,7 @@ jobs:
         chmod 600 key.pem  # Ensure the private key has the correct permissions
 
         # Sync model and template files to the EC2 instance using rsync
-        rsync -avz -e "ssh -o StrictHostKeyChecking=no -i key.pem" model/ template/ ec2-user@${SSH_HOST}:/home/ec2-user/Email_generator/
+        rsync -avz -e "ssh -o StrictHostKeyChecking=no -i key.pem" model/ template/ {user_name}@${SSH_HOST}:/home/ec2-user/Email_generator/
 
     - name: Clean up
       run: rm key.pem  # Remove the temporary key file after the operation
