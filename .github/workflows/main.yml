@@ -23,8 +23,8 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}          # SSH private key stored in GitHub secrets
           source: |
             auto_email_generations/model                              # Copy the model folder
-            auto_email_generations/templates                          # Copy the templates folder
-          target: "Project/email_generation/"    # Target directory on EC2
+            auto_email_generations/template                          # Copy the templates folder
+          target: "./Project/email_generation"    # Target directory on EC2
 
       # Step 3: Sync model and template files to EC2 using rsync
       # - name: Sync model and template files to EC2 using rsync
