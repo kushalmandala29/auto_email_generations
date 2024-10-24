@@ -27,19 +27,19 @@ jobs:
           target: "Project/email_generation/"    # Target directory on EC2
 
       # Step 3: Sync model and template files to EC2 using rsync
-      - name: Sync model and template files to EC2 using rsync
-        env:
-          SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}  # RSA Private Key stored in Secrets
-          SSH_HOST: ${{ secrets.EC2_HOST }}            # Public IP of your EC2 instance
-          SSH_USER: ${{ secrets.EC2_USERNAME }}        # Username on EC2 instance
-        run: |
-          # Save SSH private key
-          echo "${SSH_PRIVATE_KEY}" > key.pem
-          chmod 600 key.pem  # Ensure the private key has correct permissions
+      # - name: Sync model and template files to EC2 using rsync
+      #   env:
+      #     SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}  # RSA Private Key stored in Secrets
+      #     SSH_HOST: ${{ secrets.EC2_HOST }}            # Public IP of your EC2 instance
+      #     SSH_USER: ${{ secrets.EC2_USERNAME }}        # Username on EC2 instance
+      #   run: |
+      #     # Save SSH private key
+      #     echo "${SSH_PRIVATE_KEY}" > key.pem
+      #     chmod 600 key.pem  # Ensure the private key has correct permissions
           
-          # Sync files using rsync
-          rsync -avz -e "ssh -o StrictHostKeyChecking=no -i key.pem" model/ templates/ ${SSH_USER}@${SSH_HOST}:Project/email_generation/
+      #     # Sync files using rsync
+      #     rsync -avz -e "ssh -o StrictHostKeyChecking=no -i key.pem" model/ templates/ ${SSH_USER}@${SSH_HOST}:Project/email_generation/
 
-      # Step 4: Clean up the private key
-      - name: Clean up
-        run: rm key.pem
+      # # Step 4: Clean up the private key
+      # - name: Clean up
+      #   run: rm key.pem
