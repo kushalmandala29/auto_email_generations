@@ -1,0 +1,45 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches:
+      - main  # Trigger this workflow on pushes to the 'main' branch
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Checkout source code from the main branch
+      - name: Checkout source code
+        uses: actions/checkout@v3
+
+      # Step 2: Copy model and templates to EC2 using appleboy's scp-action
+      - name: Copy files to EC2
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}            # EC2 instance public IP or hostname
+          username: ${{ secrets.EC2_USERNAME }}    # Username (e.g., ubuntu or ec2-user)
+          key: ${{ secrets.EC2_SSH_KEY }}          # SSH private key stored in GitHub secrets
+          source: |
+            auto_email_generations/model                              # Copy the model folder
+            auto_email_generations/template                          # Copy the templates folder
+          target: "./Project/email_generation"    # Target directory on EC2
+
+      # Step 3: Sync model and template files to EC2 using rsync
+      # - name: Sync model and template files to EC2 using rsync
+      #   env:
+      #     SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}  # RSA Private Key stored in Secrets
+      #     SSH_HOST: ${{ secrets.EC2_HOST }}            # Public IP of your EC2 instance
+      #     SSH_USER: ${{ secrets.EC2_USERNAME }}        # Username on EC2 instance
+      #   run: |
+      #     # Save SSH private key
+      #     echo "${SSH_PRIVATE_KEY}" > key.pem
+      #     chmod 600 key.pem  # Ensure the private key has correct permissions
+          
+      #     # Sync files using rsync
+      #     rsync -avz -e "ssh -o StrictHostKeyChecking=no -i key.pem" model/ templates/ ${SSH_USER}@${SSH_HOST}:Project/email_generation/
+
+      # # Step 4: Clean up the private key
+      # - name: Clean up
+      #   run: rm key.pem
