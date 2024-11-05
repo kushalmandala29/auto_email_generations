@@ -1,0 +1,24 @@
+# transformers 
+pydantic
+# torch
+# torchvision
+pandas
+# dotenv
+langchain_core
+flask
+langchain_ollama
+Flask-Cors
+# sys
+ollama
+# langchain
+langchain
+flask
+pydantic
+flask_cors
+langchain_ollama
+dataclasses
+json
+re
+flask
+flask_cors
+# langchain
