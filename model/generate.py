@@ -156,7 +156,11 @@ The response must be ONLY the JSON object with these fields:
         response = self.llm.predict(prompt)
 
         # print(type(response))
+<<<<<<< HEAD
         # print(response)
+=======
+        print(response)
+>>>>>>> d29eb5d52887dd7616a4c650d4d29efa3cda41ec
         # return response
             # Parse and validate response
         email_content = self.parser.parse_response(response)

@@ -14,8 +14,13 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the entire model and template directories into the container
+<<<<<<< HEAD
 # COPY model ./model
 # COPY template ./template
+=======
+COPY model ./model
+COPY template ./template
+>>>>>>> d29eb5d52887dd7616a4c650d4d29efa3cda41ec
 
 RUN ollama pull tinyllama  # Replace this with the model you want
 
