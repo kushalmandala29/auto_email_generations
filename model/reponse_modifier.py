@@ -1,132 +1,115 @@
-from langchain_ollama.llms import OllamaLLM
-from langchain.prompts import PromptTemplate
+import os
+# from langchain.llms import Ollama
 from langchain.chains import LLMChain
-from langchain.output_parsers import PydanticOutputParser
-from pydantic import BaseModel, Field
-from typing import Optional, List
-import re
-from datetime import datetime
+from test_generate import ModelConfig
 
+from langchain.prompts import PromptTemplate
+from langchain_ollama.llms import OllamaLLM
+from langchain.callbacks.base import BaseCallbackHandler
 
+# Optional: Set up the OpenAI API key if needed
+# openai.api_key = os.environ.get("OPENAI_API_KEY")
 
-class ProcessedInput(BaseModel):
-    """Pydantic model for structured output"""
-    context: str = Field(description="The main context or subject matter")
-    tone: str = Field(description="The tone for communication")
-    purpose: str = Field(description="The goal or objective")
-    key_points: List[str] = Field(description="Extracted key points from the context")
-    related_topics: List[str] = Field(description="Related topics for context enrichment")
-    suggested_actions: List[str] = Field(description="Recommended next steps")
+# Define a custom callback handler to monitor execution
+class StructuringCallbackHandler(BaseCallbackHandler):
+    def on_llm_start(self, serialized, **kwargs):
+        """Executes at the start of the LLM process."""
+        print("Starting data structuring process...")
 
-class DataProcessor:
-    def __init__(self, model_name="mistral"):
-        """Initialize the processor with specified Ollama model"""
-        self.llm = Ollama(model=model_name)
-        self.output_parser = PydanticOutputParser(pydantic_object=ProcessedInput)
-        self.default_tone = "professional but friendly"
+    def on_llm_end(self, output, **kwargs):
+        """Executes when the LLM process completes."""
+        print("Data structuring complete.")
+
+# Define the main class to handle data structuring
+class DataStructurer:
+    def __init__(self):
+        """Initializes the DataStructurer with an LLM and prompt template."""
+
+        self.config = ModelConfig()
+        self.llm = OllamaLLM(
+            model=self.config.model_name,
+            temperature=self.config.temperature
+        )
         
-        # Initialize prompt templates
-        self.structure_prompt = PromptTemplate(
+        self.prompt = self._create_prompt_template()
+        self.callback_handler = StructuringCallbackHandler()
+        self.structuring_chain = self._create_structuring_chain()
+
+    
+
+    def _create_prompt_template(self):
+        """Defines the prompt template for structuring unstructured input data."""
+        return PromptTemplate(
             template="""
-            Analyze the following input and structure it into a formal format.
-            Extract or infer the context, tone (if not specified, use professional but friendly), and purpose.
-            Also identify key points, related topics, and suggest actions.
+            You are an AI assistant tasked with taking unstructured input data and transforming it into a structured format. The input data will be provided as a raw string. Your goal is to extract the relevant information and organize it into a coherent output.
 
-            Input: {raw_input}
+            The output should be in the following format:
+            ```json
+            {{
+              "context": "<context of the input data>",
+              "tone": "<tone to be used, defaulting to 'professional but friendly' if not specified>",
+              "purpose": "<purpose or intent of the input data>",
+              "enriched_data": [
+                {{
+                  "field1": "<value1>",
+                  "field2": "<value2>",
+                  "field3": "<value3>"
+                }},
+                {{
+                  "field1": "<value1>",
+                  "field2": "<value2>",
+                  "field3": "<value3>"
+                }}
+              ]
+            }}
+            ```
 
-            {format_instructions}
+            The "enriched_data" section should contain a list of dictionaries, where each dictionary represents a structured data point extracted from the input. The fields within each data point should be relevant and contextually meaningful, based on the input data.
 
-            Provide a comprehensive analysis and structure the output accordingly.
+            If any required information (context, tone, or purpose) is missing from the input, please use the following default values:
+            - Context: "Unknown"
+            - Tone: "professional but friendly"
+            - Purpose: "Unknown"
+
+            Input: {input}
+
+            Output:
             """,
-            input_variables=["raw_input"],
-            partial_variables={"format_instructions": self.output_parser.get_format_instructions()}
+            input_variables=["input"]
         )
 
-        self.enrichment_prompt = PromptTemplate(
-            template="""
-            Based on the following structured information, provide additional context and insights:
-            {structured_data}
+    def _create_structuring_chain(self):
+        """Creates the LLMChain for structuring data using the defined LLM and prompt template."""
+        return LLMChain(llm=self.llm, prompt=self.prompt, callbacks=[self.callback_handler])
 
-            Please analyze this information and provide:
-            1. Additional relevant context
-            2. Potential implications
-            3. Related considerations
-            4. Best practices
-
-            Keep the tone {tone} while providing these insights.
-            """,
-            input_variables=["structured_data", "tone"]
-        )
-
-    def _preprocess_input(self, raw_input: str) -> str:
-        """Clean and standardize input text"""
-        # Remove extra whitespace and normalize line endings
-        cleaned = re.sub(r'\s+', ' ', raw_input).strip()
-        # Convert common variations of section identifiers
-        cleaned = re.sub(r'(?i)context\s*[:|-]', 'Context:', cleaned)
-        cleaned = re.sub(r'(?i)tone\s*[:|-]', 'Tone:', cleaned)
-        cleaned = re.sub(r'(?i)purpose\s*[:|-]', 'Purpose:', cleaned)
-        return cleaned
-
-    def _extract_tone(self, text: str) -> str:
-        """Extract tone from input or return default"""
-        tone_match = re.search(r'(?i)tone\s*[:|-]\s*([^.\n]+)', text)
-        return tone_match.group(1).strip() if tone_match else self.default_tone
-
-    async def process_input(self, raw_input: str) -> dict:
-        """Process raw input into structured format with enrichment"""
+    def structure_data(self, input_text):
+        """
+        Processes unstructured input data and transforms it into a structured format.
+        
+        Args:
+            input_text (str): The raw input data to be structured.
+            
+        Returns:
+            dict: The structured output data.
+        """
         try:
-            # Preprocess input
-            cleaned_input = self._preprocess_input(raw_input)
-            
-            # Structure the input using LLM
-            structure_chain = LLMChain(llm=self.llm, prompt=self.structure_prompt)
-            structured_output = structure_chain.run(raw_input=cleaned_input)
-            
-            # Parse the structured output
-            processed_data = self.output_parser.parse(structured_output)
-            
-            # Get enrichment based on structured data
-            enrichment_chain = LLMChain(llm=self.llm, prompt=self.enrichment_prompt)
-            enrichment = enrichment_chain.run(
-                structured_data=str(processed_data.dict()),
-                tone=processed_data.tone
-            )
-            
-            # Combine original structure with enrichment
-            final_output = {
-                "structured_data": processed_data.dict(),
-                "enrichment": enrichment,
-                "metadata": {
-                    "processed_at": datetime.now().isoformat(),
-                    "model_used": self.llm.model
-                }
-            }
-            
-            return final_output
-            
+            output = self.structuring_chain.invoke(input_text)
+            return output
         except Exception as e:
-            raise Exception(f"Error processing input: {str(e)}")
+            print(f"Error: {e}")
+            return {
+                "context": "Unknown",
+                "tone": "professional but friendly",
+                "purpose": "Unknown",
+                "enriched_data": []
+            }
+# Example usage:
+# Example usage:
+if __name__ == "__main__":
+    data_structurer = DataStructurer()
+    input_text = """
+    Need to send update about the new product launch to stakeholders.
+    """
+    structured_output = data_structurer.structure_data(input_text)
 
-    def validate_output(self, output: dict) -> bool:
-        """Validate the processed output"""
-        try:
-            required_fields = ["context", "tone", "purpose"]
-            structured_data = output.get("structured_data", {})
-            
-            # Check for required fields
-            for field in required_fields:
-                if not structured_data.get(field):
-                    return False
-            
-            # Validate lists are non-empty
-            list_fields = ["key_points", "related_topics", "suggested_actions"]
-            for field in list_fields:
-                if not isinstance(structured_data.get(field), list) or \
-                   not structured_data.get(field):
-                    return False
-            
-            return True
-            
-        except Exception:
-            return False
+    print(structured_output)

@@ -60,7 +60,7 @@ class EmailParser:
         email_parts = {}
     
     # Split the text into sections using the '|' delimiter
-        sections = re.findall(r'(?:\|(.*?)\||(\w+):)\s*(.*?)(?=(?:\|\w+\||[A-Za-z]+:)|\Z)', email_text, re.DOTALL)
+        sections = re.findall(r'(\w+):\s*(.*?)(?=(?:\w+:)|\Z)', email_text, re.DOTALL)
     
     # Process each section
         for section_name, content in sections:
@@ -102,46 +102,68 @@ class EmailGenerator:
         )
         self.parser = EmailParser()
 
-    def create_prompt(self, context: str, tone: str, purpose: str) -> str:
-        """Create a formatted prompt with explicit JSON instructions"""
-        template = """Generate an email body content (NO subject line, NO 'From:', NO 'To:' fields) based on:
+    
+    def create_email_prompt(context: str, tone: str, purpose: str, enriched_data: list[dict] = None) -> str:
+        """Create a formatted prompt to generate an email body based on the provided context, tone, purpose, and optional enriched data."""
+        format_instructions = """
+    {
+  "salutation": "The greeting to start the email (e.g., 'Dear [Name],', 'Hello,').",
+  "body": "The main message body of the email.",
+  "closing": "The closing statement of the email (e.g., 'Best regards,', 'Thank you,').",
+  "signature": "The signature to end the email."
+}"""
 
-Context: {context}
-Tone: {tone}
-Purpose: {purpose}
+        prompt_template = PromptTemplate(
+            template="""
+    Generate an email body content (NO subject line, NO 'From:', NO 'To:' fields) based on:
 
-{format_instructions}
+    Context: {context}
+    Tone: {tone} 
+    Purpose: {purpose}
+    {enriched_data_section}
 
-Requirements:
-1. Start directly with a greeting (e.g., "Dear [Name]," or "Hello,")
-2. Write the main message body
-3. Add a closing statement (e.g., "Best regards," or "Thank you,")
-4. End with a signature
-5. Use the specified tone throughout
-6. Address the purpose clearly
-7. Keep content relevant to context
+    {format_instructions}
 
-DO NOT include:
-- Subject line
-- Email headers (From:, To:, Date:, etc.)
-- Any metadata
+    Requirements:
+    1. Start directly with a greeting (e.g., "Dear [Name]," or "Hello,")
+    2. Write the main message body
+    3. Add a closing statement (e.g., "Best regards," or "Thank you,")
+    4. End with a signature
+    5. Use the specified tone throughout
+    6. Address the purpose clearly
+    7. Keep content relevant to context{enriched_data_requirements}
 
-The response must be ONLY the JSON object with these fields:
-- salutation
-- body
-- closing
-- signature"""
+    DO NOT include:
+    - Subject line
+    - Email headers (From:, To:, Date:, etc.)
+    - Any metadata
 
-        return PromptTemplate(
-            template=template,
-            input_variables=["context", "tone", "purpose"],
-            partial_variables={"format_instructions": self.parser.get_format_instructions()}
-        ).format(
-            context=context,
-            tone=tone,
-            purpose=purpose
+    The response must be ONLY the JSON object with these fields:
+    - salutation
+    - body
+    - closing
+    - signature
+    """,
+            input_variables=["context", "tone", "purpose", "enriched_data_section", "enriched_data_requirements", "format_instructions"]
         )
 
+        enriched_data_section = ""
+        enriched_data_requirements = ""
+        if enriched_data:
+            enriched_data_section = f"""
+    Enriched Data:
+    {enriched_data}"""
+            enriched_data_requirements = """
+    8. Incorporate relevant information from the provided enriched data"""
+
+        return prompt_template.format(
+            context=context,
+            tone=tone,
+            purpose=purpose,
+            enriched_data_section=enriched_data_section,
+            enriched_data_requirements=enriched_data_requirements,
+            format_instructions=format_instructions
+        )
 
     def generate(self, 
                 context: str, 
@@ -150,17 +172,15 @@ The response must be ONLY the JSON object with these fields:
         """Generate an email based on the provided parameters"""
         
             # Create prompt
-        prompt = self.create_prompt(context, tone, purpose)
+        prompt = self.create_email_prompt(context, tone, purpose)
 
             # Generate response
         response = self.llm.predict(prompt)
 
         # print(type(response))
-<<<<<<< HEAD
         # print(response)
-=======
-        print(response)
->>>>>>> d29eb5d52887dd7616a4c650d4d29efa3cda41ec
+
+        
         # return response
             # Parse and validate response
         email_content = self.parser.parse_response(response)
@@ -194,7 +214,6 @@ def main():
     }
 
     try:
-        # Generate email
         result = generator.generate(**params)
         print("Generated Email:")
         print(result["formatted"])
