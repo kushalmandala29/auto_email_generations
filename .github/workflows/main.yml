@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     
     - name: Set up Python
       uses: actions/setup-python@v4
@@ -24,32 +24,27 @@ jobs:
         
     - name: Install dependencies
       run: |
-        python -m pip3 install --upgrade pip
+        python -m pip install --upgrade pip
         pip install -r requirements.txt
         
    
   deploy:
     needs: build
     
-    # Replace the following values with your actual EC2 instance details
     env:
       AWS_REGION: us-east-1
-      EC2_INSTANCE_ID: i-016e352179ac6d6ea
-      SSH_USER: ${{ secrets.EC2_USERNAME}}
+      EC2_HOST: ${{ secrets.EC2_HOST }}
+      EC2_USERNAME: ${{ secrets.EC2_USERNAME }}
       SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
       
     runs-on: ubuntu-latest
     
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
-        # Only checkout the specific folders we want to deploy
-        path: |
-          model
-          templates
-          app.py
-          requirements.txt
-        
+        # Only checkout specific files
+        fetch-depth: 1
+    
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v1
       with:
@@ -59,19 +54,21 @@ jobs:
         
     - name: Deploy to EC2
       env:
-        EC2_INSTANCE_ID: ${{ env.EC2_INSTANCE_ID }}
-        SSH_USER: ${{ env.SSH_USER }}
+        EC2_HOST: ${{ env.EC2_HOST }}
+        EC2_USERNAME: ${{ env.EC2_USERNAME }}
         SSH_PRIVATE_KEY: ${{ env.SSH_PRIVATE_KEY }}
       run: |
         # Install necessary dependencies
         sudo apt-get update
         sudo apt-get install -y openssh-client
         
-        # Copy only the relevant folders to EC2 instance
+        # Configure SSH key
         mkdir -p ~/.ssh
         echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
         chmod 600 ~/.ssh/id_rsa
-        scp -o StrictHostKeyChecking=no -r templates model requirements.txt app.py $SSH_USER@$EC2_INSTANCE_ID:/path/to/app
+        
+        # Copy only the relevant files to EC2 instance
+        scp -o StrictHostKeyChecking=no -r templates model requirements.txt app.py $EC2_USERNAME@$EC2_HOST:/path/to/app
         
         # Run application on EC2 instance
-        ssh -o StrictHostKeyChecking=no $SSH_USER@$EC2_INSTANCE_ID 'cd /path/to/app && pip install -r requirements.txt && python app/main.py'
+        ssh -o StrictHostKeyChecking=no $EC2_USERNAME@$EC2_HOST 'cd /path/to/app && pip3 install -r requirements.txt && python3 app.py'
