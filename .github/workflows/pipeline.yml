@@ -1,5 +1,6 @@
 name: CI/CD to EC2 (Selective)
 
+
 on:
   push:
     branches: [ "main" ]
