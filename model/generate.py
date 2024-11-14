@@ -1,224 +1,103 @@
-from typing import Dict, Optional, List
-from pydantic import BaseModel, Field
-from langchain.output_parsers import ResponseSchema, StructuredOutputParser
+import os
+# from langchain.llms import Ollama
+from langchain.chains import LLMChain
+# from test_generate import ModelConfig
+
 from langchain.prompts import PromptTemplate
 from langchain_ollama.llms import OllamaLLM
-from dataclasses import dataclass
-import json
-import re
+from langchain.callbacks.base import BaseCallbackHandler
 
-@dataclass
-class ModelConfig:
-    """Configuration for the LLM model"""
-    model_name: str = "tinyllama"
-    temperature: float = 0.7
+# Optional: Set up the OpenAI API key if needed
+# openai.api_key = os.environ.get("OPENAI_API_KEY")
 
-class EmailContent(BaseModel):
-    """Schema for email content"""
-    subject: str = Field(..., description="The email subject line")
-    salutation: str = Field(..., description="The opening greeting")
-    body: str = Field(..., description="The main content")
-    closing: str = Field(..., description="The closing statement")
-    signature: str = Field(..., description="The signature line")
+# Define a custom callback handler to monitor execution
+class StructuringCallbackHandler(BaseCallbackHandler):
+    def on_llm_start(self, serialized, **kwargs):
+        """Executes at the start of the LLM process."""
+        print("Starting data structuring process...")
 
-    def format(self) -> str:
-        """Format the email content into a string"""
-        return f"""Subject: {self.subject}
+    def on_llm_end(self, output, **kwargs):
+        """Executes when the LLM process completes."""
+        print("Data structuring complete.")
 
-{self.salutation}
+# Define the main class to handle data structuring
+class DataStructurer:
+    def __init__(self,model_name="tinyllama", temperature=0.7):
+        """Initializes the DataStructurer with an LLM and prompt template."""
 
-{self.body}
-
-{self.closing}
-
-{self.signature}"""
-
-class EmailParser:
-    """Handles parsing and validation of email content"""
-    def __init__(self):
-        self.response_schemas = [
-            ResponseSchema(name="salutation", description="The opening greeting of the email"),
-            ResponseSchema(name="body", description="The main content of the email"),
-            ResponseSchema(name="closing", description="The closing statement of the email"),
-            ResponseSchema(name="signature", description="The signature line of the email")
-        ]
-        self.parser = StructuredOutputParser.from_response_schemas(self.response_schemas)
-
-    def get_format_instructions(self) -> str:
-        """Get format instructions for the parser"""
-        return """Please provide the email content in the following JSON format:
-    {
-        "salutation": "your greeting",
-        "body": "your email body",
-        "closing": "your closing statement",
-        "signature": "your signature"
-    }
-    Ensure the response is properly formatted JSON."""
-
-    def parse_response(self,email_text: str) -> EmailContent:
-    # Initialize dictionary to store the parts
-        email_parts = {}
-    
-    # Split the text into sections using the '|' delimiter
-        sections = re.findall(r'(\w+):\s*(.*?)(?=(?:\w+:)|\Z)', email_text, re.DOTALL)
-    
-    # Process each section
-        for section_name, content in sections:
-            section_name = section_name.strip().lower()
-            content = content.strip()
-        
-            if section_name == "closing":
-            # Split by "Best regards," or similar closing phrase
-                parts = re.split(r'(?i)best regards,\s*', content)
-                if len(parts) > 1:
-                # Main closing text
-                    email_parts["closing"] = parts[0].strip() + "\nBest regards,"
-                # Get signature lines
-                    signature_lines = [line.strip() for line in parts[1].strip().split('\n') if line.strip()]
-                    email_parts["signature"] = "\n".join(signature_lines)
-                else:
-                    email_parts["closing"] = content
-                    email_parts["signature"] = ""
-            elif section_name in ["salutation", "body"]:
-                email_parts[section_name] = content
-    
-    # Create EmailContent object
-        return EmailContent(
-            salutation=email_parts.get("salutation", ""),
-            body=email_parts.get("body", ""),
-            closing=email_parts.get("closing", ""),
-            signature=email_parts.get("signature", "")
-        )
-    
-
-class EmailGenerator:
-    """Main email generation class"""
-    def __init__(self, config: Optional[ModelConfig] = None):
-        """Initialize EmailGenerator with configuration"""
-        self.config = config or ModelConfig()
+        # self.config = ModelConfig()
         self.llm = OllamaLLM(
-            model=self.config.model_name,
-            temperature=self.config.temperature
+            model=model_name,
+            temperature=temperature
         )
-        self.parser = EmailParser()
+        
+        
+        self.prompt = self._create_prompt_template()
+        self.callback_handler = StructuringCallbackHandler()
+        self.structuring_chain = self._create_structuring_chain()
 
     
-    def create_email_prompt(context: str, tone: str, purpose: str, enriched_data: list[dict] = None) -> str:
-        """Create a formatted prompt to generate an email body based on the provided context, tone, purpose, and optional enriched data."""
-        format_instructions = """
-    {
-  "salutation": "The greeting to start the email (e.g., 'Dear [Name],', 'Hello,').",
-  "body": "The main message body of the email.",
-  "closing": "The closing statement of the email (e.g., 'Best regards,', 'Thank you,').",
-  "signature": "The signature to end the email."
-}"""
 
-        prompt_template = PromptTemplate(
+    def _create_prompt_template(self):
+        """Defines the prompt template for structuring unstructured input data."""
+        return PromptTemplate(
             template="""
-    Generate an email body content (NO subject line, NO 'From:', NO 'To:' fields) based on:
+            You are an AI assistant tasked with taking unstructured input data and transforming it into a structured format. The input data will be provided as a raw string. Your goal is to extract the relevant information and organize it into a coherent output.
 
-    Context: {context}
-    Tone: {tone} 
-    Purpose: {purpose}
-    {enriched_data_section}
+            The output should be in the following format:
+            ```json
+            {{
+              "context": "<context of the input data>",
+              "tone": "<tone to be used, defaulting to 'professional but friendly' if not specified>",
+              "purpose": "<purpose or intent of the input data>",
+                }}
 
-    {format_instructions}
+            If any required information (context, tone, or purpose) is missing from the input, please use the following default values:
+            - Context: "Unknown"
+            - Tone: "professional but friendly"
+            - Purpose: "Unknown"
 
-    Requirements:
-    1. Start directly with a greeting (e.g., "Dear [Name]," or "Hello,")
-    2. Write the main message body
-    3. Add a closing statement (e.g., "Best regards," or "Thank you,")
-    4. End with a signature
-    5. Use the specified tone throughout
-    6. Address the purpose clearly
-    7. Keep content relevant to context{enriched_data_requirements}
+            Input: {input}
 
-    DO NOT include:
-    - Subject line
-    - Email headers (From:, To:, Date:, etc.)
-    - Any metadata
-
-    The response must be ONLY the JSON object with these fields:
-    - salutation
-    - body
-    - closing
-    - signature
-    """,
-            input_variables=["context", "tone", "purpose", "enriched_data_section", "enriched_data_requirements", "format_instructions"]
+            Output:
+            """,
+            input_variables=["input"]
         )
 
-        enriched_data_section = ""
-        enriched_data_requirements = ""
-        if enriched_data:
-            enriched_data_section = f"""
-    Enriched Data:
-    {enriched_data}"""
-            enriched_data_requirements = """
-    8. Incorporate relevant information from the provided enriched data"""
+    def _create_structuring_chain(self):
+        """Creates the LLMChain for structuring data using the defined LLM and prompt template."""
+        return LLMChain(llm=self.llm, prompt=self.prompt, callbacks=[self.callback_handler])
 
-        return prompt_template.format(
-            context=context,
-            tone=tone,
-            purpose=purpose,
-            enriched_data_section=enriched_data_section,
-            enriched_data_requirements=enriched_data_requirements,
-            format_instructions=format_instructions
-        )
-
-    def generate(self, 
-                context: str, 
-                tone: str, 
-                purpose: str) -> Dict[str, str]:
-        """Generate an email based on the provided parameters"""
+    def structure_data(self, input_text):
+        """
+        Processes unstructured input data and transforms it into a structured format.
         
-            # Create prompt
-        prompt = self.create_email_prompt(context, tone, purpose)
-
-            # Generate response
-        response = self.llm.predict(prompt)
-
-        # print(type(response))
-        # print(response)
-
-        
-        # return response
-            # Parse and validate response
-        email_content = self.parser.parse_response(response)
-
-        # # content=prompt|self.llm|self.parser.parse_response
-        # print(email_content)
+        Args:
+            input_text (str): The raw input data to be structured.
             
-        return {
-            "parsed": email_content.dict(),
-            "formatted": email_content.format()
-        }
-        # return {
-        #     "parsed": content.dict(),
-        #     "formatted": content.format()
-        # }
+        Returns:
+            dict: The structured output data.
+        """
+        output = self.structuring_chain.invoke(input_text)
+        return output
+        # try:
+        #     output = self.structuring_chain.invoke(input_text)
+        #     return output
         # except Exception as e:
-        #     print(f"Debug - Raw response: {response}")  # For debugging
-        #     raise RuntimeError(f"Email generation failed: {str(e)}")
-
-def main():
-    """Example usage of EmailGenerator"""
-    # Initialize generator
-    config = ModelConfig(temperature=0.7)
-    generator = EmailGenerator(config)
-
-    # Example parameters
-    params = {
-        "context": "Client meeting about website redesign project",
-        "tone": "professional but friendly",
-        "purpose": "summarize key points and outline next steps"
-    }
-
-    try:
-        result = generator.generate(**params)
-        print("Generated Email:")
-        print(result["formatted"])
-    except Exception as e:
-        print(f"Error generating email: {str(e)}")
-
+        #     print(f"Error: {e}")
+        #     return {
+        #         "context": "Unknown",
+        #         "tone": "professional but friendly",
+        #         "purpose": "Unknown",
+        #         # "enriched_data": []
+        #     }
+# Example usage:
+# Example usage:
 if __name__ == "__main__":
-    main()
+    data_structurer = DataStructurer()
+    input_text = """
+    Need to send update about the new product launch to stakeholders.
+    """
+    structured_output = data_structurer.structure_data(input_text)
+
+    print(structured_output)

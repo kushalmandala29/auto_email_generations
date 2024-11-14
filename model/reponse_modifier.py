@@ -1,7 +1,8 @@
 import os
+import re
 # from langchain.llms import Ollama
 from langchain.chains import LLMChain
-from test_generate import ModelConfig
+# from test_generate import ModelConfig
 
 from langchain.prompts import PromptTemplate
 from langchain_ollama.llms import OllamaLLM
@@ -22,61 +23,73 @@ class StructuringCallbackHandler(BaseCallbackHandler):
 
 # Define the main class to handle data structuring
 class DataStructurer:
-    def __init__(self):
+    def __init__(self,model_name="tinyllama", temperature=0.7):
         """Initializes the DataStructurer with an LLM and prompt template."""
 
-        self.config = ModelConfig()
+        # self.config = ModelConfig()
         self.llm = OllamaLLM(
-            model=self.config.model_name,
-            temperature=self.config.temperature
+            model=model_name,
+            temperature=temperature
         )
+        
         
         self.prompt = self._create_prompt_template()
         self.callback_handler = StructuringCallbackHandler()
         self.structuring_chain = self._create_structuring_chain()
+
+    # def extract_latest(key, text):
+    #     """Extract the latest occurrence of a key-value pair"""
+    #     pattern = f"{key}.*?[\"']([^\"']+)[\"']"
+    #     matches = re.findall(pattern, text, re.IGNORECASE)
+    #     return matches[-1] if matches else None
+    
+    def get_latest_values(self,input_str):
+        def extract_latest(key, text):
+            """Extract the latest occurrence of a key-value pair"""
+            pattern = f"{key}.*?[\"']([^\"']+)[\"']"
+            matches = re.findall(pattern, text, re.IGNORECASE)
+            return matches[-1] if matches else None
+    
+        """Helper function to extract the latest values from input"""
+        return {
+        "context": context if (context := extract_latest("context", input_str)) else "Unknown",
+        "tone": tone if (tone := extract_latest("tone", input_str)) else "professional but friendly",
+        "purpose": purpose if (purpose := extract_latest("purpose", input_str)) else "Unknown"
+    }
 
     
 
     def _create_prompt_template(self):
         """Defines the prompt template for structuring unstructured input data."""
         return PromptTemplate(
-            template="""
-            You are an AI assistant tasked with taking unstructured input data and transforming it into a structured format. The input data will be provided as a raw string. Your goal is to extract the relevant information and organize it into a coherent output.
+    input_variables=["input"],
+    template="""
+    Given the input text:
+    {input}
 
-            The output should be in the following format:
-            ```json
-            {{
-              "context": "<context of the input data>",
-              "tone": "<tone to be used, defaulting to 'professional but friendly' if not specified>",
-              "purpose": "<purpose or intent of the input data>",
-              "enriched_data": [
-                {{
-                  "field1": "<value1>",
-                  "field2": "<value2>",
-                  "field3": "<value3>"
-                }},
-                {{
-                  "field1": "<value1>",
-                  "field2": "<value2>",
-                  "field3": "<value3>"
-                }}
-              ]
-            }}
-            ```
+    Provide a detailed analysis of the input in the form of a dictionary with the following keys:
 
-            The "enriched_data" section should contain a list of dictionaries, where each dictionary represents a structured data point extracted from the input. The fields within each data point should be relevant and contextually meaningful, based on the input data.
+    Context:
+    - Describe the overall context or situation surrounding the input text. What is the background or setting?
+    - Identify any key entities, stakeholders, or important details that provide context.
+    - Summarize the main topic or subject matter of the input.
 
-            If any required information (context, tone, or purpose) is missing from the input, please use the following default values:
-            - Context: "Unknown"
-            - Tone: "professional but friendly"
-            - Purpose: "Unknown"
+    Tone:
+    - Describe the overall tone or emotional quality of the input text.
+    - Is the tone formal or informal? Friendly or professional? Persuasive or informative?
+    - Identify any specific language, word choices, or stylistic elements that contribute to the tone.
 
-            Input: {input}
+    Purpose:
+    - Determine the main purpose or intent behind the input text.
+    - Is the purpose to inform, persuade, request, express an opinion, or something else?
+    - What specific goal or outcome does the input text seem to be working towards?
 
-            Output:
-            """,
-            input_variables=["input"]
-        )
+    Please provide your analysis in the form of a dictionary with the above key-value pairs.
+    """
+)
+    
+
+
 
     def _create_structuring_chain(self):
         """Creates the LLMChain for structuring data using the defined LLM and prompt template."""
@@ -92,16 +105,19 @@ class DataStructurer:
         Returns:
             dict: The structured output data.
         """
+        
         try:
-            output = self.structuring_chain.invoke(input_text)
-            return output
+            output_unstruture = self.structuring_chain.invoke(input_text)
+
+            # output= self.get_latest_values(output_unstruture)
+            return output_unstruture
         except Exception as e:
             print(f"Error: {e}")
             return {
                 "context": "Unknown",
                 "tone": "professional but friendly",
                 "purpose": "Unknown",
-                "enriched_data": []
+                # "enriched_data": []
             }
 # Example usage:
 # Example usage:

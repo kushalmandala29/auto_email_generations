@@ -1,14 +1,7 @@
-<<<<<<< HEAD
 # transformers 
 pydantic
 # torch
 # torchvision
-=======
-transformers 
-
-torch
-torchvision
->>>>>>> d29eb5d52887dd7616a4c650d4d29efa3cda41ec
 pandas
 # dotenv
 langchain_core
@@ -16,7 +9,6 @@ flask
 langchain_ollama
 Flask-Cors
 # sys
-<<<<<<< HEAD
 ollama
 # langchain
 langchain
@@ -30,6 +22,3 @@ re
 flask
 flask_cors
 # langchain
-=======
-ollama-cli
->>>>>>> d29eb5d52887dd7616a4c650d4d29efa3cda41ec
