@@ -17,8 +17,8 @@ pydantic
 flask_cors
 langchain_ollama
 # dataclasses
-json
-re
+# json
+# re
 flask
 flask_cors
 # langchain
