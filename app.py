@@ -32,4 +32,4 @@ def generate_email_content():
     return jsonify({"email_body": full_email_content}), 200
 
 if __name__ == '__main__':
-    app.run(host='localhost', port=8000, debug=True)
+    app.run(host='0.0.0.0', port=80, debug=True)

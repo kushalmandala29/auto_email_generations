@@ -3,70 +3,259 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Email Content Generator</title>
+    <title>E-mail Generator</title>
+
     <style>
         body {
             font-family: Arial, sans-serif;
             margin: 0;
-            padding: 20px;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-image: url('https://images.pexels.com/photos/1103970/pexels-photo-1103970.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500');
+            background-size: cover;
+            background-position: center;
         }
-        .container {
-            max-width: 600px;
-            margin: auto;
-            padding: 20px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-        h1 {
-            font-size: 24px;
-            margin-bottom: 20px;
-        }
-        label {
-            font-weight: bold;
-            display: block;
-            margin: 10px 0 5px;
-        }
-        input[type="text"], textarea {
-            width: 100%;
+
+        .navbar {
+            position: absolute;
+            top: 20px;
+            right: 20px;
             padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            box-sizing: border-box;
-            margin-bottom: 15px;
+            background-color: rgba(255, 255, 255, 0.7);
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
         }
-        button {
-            padding: 10px 15px;
-            background-color: #28a745;
-            color: white;
+
+        .navbar span {
+            font-weight: bold;
+        }
+
+        .auth-container {
+            width: 100%;
+            max-width: 30rem;
+            background-color: rgba(255, 255, 255, 0.85);
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 0.5rem;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .auth-header {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .input-group {
+            margin-bottom: 1rem;
+        }
+
+        .auth-input {
+            width: 90%;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            font-size: 1rem;
+        }
+
+        .submit-button {
+            padding: 0.75rem 1.5rem;
             border: none;
-            border-radius: 4px;
+            border-radius: 0.375rem;
+            font-size: 1rem;
             cursor: pointer;
+            background-color: #3b82f6;
+            color: white;
+        }
+
+        .submit-button:hover {
+            background-color: #2563eb;
+        }
+
+        .login-button {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 0.375rem;
+            font-size: 1rem;
+            cursor: pointer;
+            background-color: #10b981;
+            color: white;
+            margin-top: 1rem;
+        }
+
+        .login-button:hover {
+            background-color: #059669;
+        }
+
+        .email-compose {
+            bottom: 20px;
+            right: 20px;
+            width: 100%;
+            max-width: 40rem;
+            background-color: rgba(255, 255, 255, 0.8);
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 0.5rem;
+            padding-bottom: 1rem;
+            transform: scale(1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .email-compose:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .email-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 1rem;
+            background-color: #f3f4f6;
+            border-top-left-radius: 0.5rem;
+            border-top-right-radius: 0.5rem;
+        }
+
+        .email-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+        }
+
+        .email-body {
+            padding: 1rem;
+        }
+
+        .email-input,
+        .email-textarea {
+            width: 90%;
+            padding: 0.5rem 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            font-size: 1rem;
+        }
+
+        .email-textarea {
+            resize: none;
+            height: 10rem;
+            min-height: 3rem;
+        }
+
+        .email-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .action-button {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 0.375rem;
+            font-size: 1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .send-button {
+            background-color: #3b82f6;
+            color: white;
+        }
+
+        .send-button:hover {
+            background-color: #2563eb;
+        }
+
+        .generate-button {
+            background-color: #10b981;
+            color: white;
+        }
+
+        .generate-button:hover {
+            background-color: #059669;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Email Content Generator</h1>
-        <label for="To">To:</label>
-        <input type="text" id="to" placeholder="Enter email id">
-        <!-- <label for="emailSubject">Subject:</label>
-        <input type="text" id="emailSubject" placeholder="Enter email subject"> -->
-        
-        <label for="emailBody">Body:</label>
-        <textarea id="emailBody" rows="10" placeholder="Enter email body"></textarea>
-        
-        <button onclick="generateTemplate()">Generate Output</button>
-        
-        <label for="generatedOutput" style="margin-top: 20px;">Generated Output:</label>
-        <textarea id="generatedOutput" rows="10" readonly></textarea>
+    <div class="auth-container" id="loginFormContainer">
+        <div class="auth-header">Login</div>
+        <div class="input-group">
+            <input type="text" id="username" class="auth-input" placeholder="Username">
+        </div>
+        <div class="input-group">
+            <input type="password" id="loginPassword" class="auth-input" placeholder="Password">
+        </div>
+        <button class="submit-button" onclick="login()">Login</button>
+    </div>
+
+    <div class="navbar" id="navbar" style="display: none;">
+        <span>Welcome, <span id="userNameDisplay"></span></span>
+    </div>
+
+    <div class="email-compose" id="emailCompose" style="display: none;">
+        <div class="email-header">
+            <div class="email-title">Compose Email</div>
+        </div>
+        <div class="email-body">
+            <div class="input-group">
+                <input type="text" class="email-input" placeholder="Email ID" id="emailTo">
+            </div>
+            <div class="input-group">
+                <input type="text" class="email-input" placeholder="Subject" id="emailSubject">
+            </div>
+            <div class="input-group">
+                <textarea class="email-textarea" placeholder="Write your email..." id="emailBody"></textarea>
+            </div>
+            <div class="input-group">
+                <textarea class="email-textarea" placeholder="Generated Content..." id="generatedOutput" readonly></textarea>
+            </div>
+            <div class="email-actions">
+                <div class="action-buttons">
+                    <button class="action-button send-button" onclick="sendEmail()">Send</button>
+                    <button class="action-button generate-button" onclick="generateTemplate()">Generate</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
+        let emailCompose = document.getElementById("emailCompose");
+        let navbar = document.getElementById("navbar");
+        let userNameDisplay = document.getElementById("userNameDisplay");
+
+        let users = [
+            { username: 'kushal', password: '12345678' },
+            { username: 'sathvik', password: '12345678' }
+        ];
+
+        function login() {
+            let username = document.getElementById("username").value;
+            let password = document.getElementById("loginPassword").value;
+
+            for (let user of users) {
+                if (user.username === username && user.password === password) {
+                    navbar.style.display = "block";
+                    userNameDisplay.innerText = username;
+                    document.getElementById("loginFormContainer").style.display = "none";
+                    emailCompose.style.display = "block";
+                    return;
+                }
+            }
+            alert("Invalid username or password. Please try again.");
+        }
+
         function generateTemplate() {
-            // let emailSubject = document.getElementById("emailSubject").value;
             let emailBody = document.getElementById("emailBody").value;
-            let emailTo = document.getElementById("to").value;
+            let emailTo = document.getElementById("emailTo").value;
 
             fetch('/generate_email_content', {
                 method: 'POST',
@@ -74,7 +263,6 @@
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    // subject: emailSubject,
                     body: emailBody,
                     To: emailTo
                 })
@@ -87,6 +275,39 @@
                 console.error('Error:', error);
                 alert('Failed to generate output');
             });
+        }
+
+        function sendEmail() {
+            let emailTo = document.getElementById("emailTo").value;
+            let emailSubject = document.getElementById("emailSubject").value;
+            let emailBody = document.getElementById("emailBody").value;
+
+            if (!emailTo) {
+                alert("Please enter email");
+                return;
+            }
+
+            let emailPattern = /^(.*)(@)(outlook\.com|gmail\.com|yahoo\.com|.*\.in)$/;
+
+            if (!emailPattern.test(emailTo)) {
+                alert("Please enter a valid email address with @outlook.com, @gmail.com, @yahoo.com or .in domain");
+                return;
+            }
+
+            if (!emailSubject) {
+                alert("Please enter a subject");
+                return;
+            }
+
+            if (!emailBody) {
+                alert("Please enter email body");
+                return;
+            }
+
+            alert("Email sent successfully!");
+            document.getElementById("emailTo").value = "";
+            document.getElementById("emailSubject").value = "";
+            document.getElementById("emailBody").value = "";
         }
     </script>
 </body>

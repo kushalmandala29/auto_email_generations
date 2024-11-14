@@ -22,7 +22,7 @@ class StructuringCallbackHandler(BaseCallbackHandler):
 
 # Define the main class to handle data structuring
 class DataStructurer:
-    def __init__(self,model_name="tinyllama", temperature=0.7):
+    def __init__(self,model_name="mistral:7b", temperature=0.7):
         """Initializes the DataStructurer with an LLM and prompt template."""
 
         # self.config = ModelConfig()
