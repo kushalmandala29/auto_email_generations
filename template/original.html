@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Authentication</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-image: url('https://images.pexels.com/photos/1103970/pexels-photo-1103970.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500');
+            background-size: cover;
+            background-position: center;
+        }
+
+        /* Navbar Styling */
+        .navbar {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            padding: 10px;
+            background-color: rgba(255, 255, 255, 0.7);
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .navbar span {
+            font-weight: bold;
+        }
+
+        .auth-container {
+            width: 100%;
+            max-width: 30rem;
+            background-color: rgba(255, 255, 255, 0.85);
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 0.5rem;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .auth-header {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .input-group {
+            margin-bottom: 1rem;
+        }
+
+        .auth-input {
+            width: 90%;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            font-size: 1rem;
+        }
+
+        .submit-button {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 0.375rem;
+            font-size: 1rem;
+            cursor: pointer;
+            background-color: #3b82f6;
+            color: white;
+        }
+
+        .submit-button:hover {
+            background-color: #2563eb;
+        }
+
+        .login-button {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 0.375rem;
+            font-size: 1rem;
+            cursor: pointer;
+            background-color: #10b981;
+            color: white;
+            margin-top: 1rem;
+        }
+
+        .login-button:hover {
+            background-color: #059669;
+        }
+
+        .error-message {
+            color: red;
+            font-size: 0.875rem;
+        }
+
+        .forgot-password {
+            font-size: 0.875rem;
+            color: #3b82f6;
+            cursor: pointer;
+            text-decoration: none;
+            display: block;
+            text-align: left;
+            margin: 0.5rem 0 1rem 5%;
+        }
+
+        .forgot-password:hover {
+            color: #2563eb;
+            text-decoration: underline;
+            align-items: center;
+        }
+
+        .timer {
+            font-size: 1rem;
+            margin-top: 1rem;
+        }
+
+        /* Email Compose Styling */
+        .email-compose {
+            bottom: 20px;
+            right: 20px;
+            width: 100%;
+            max-width: 40rem;
+            background-color: rgba(255, 255, 255, 0.8);
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 0.5rem;
+            padding-bottom: 1rem;
+            transform: scale(1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .email-compose:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .email-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 1rem;
+            background-color: #f3f4f6;
+            border-top-left-radius: 0.5rem;
+            border-top-right-radius: 0.5rem;
+        }
+
+        .email-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+        }
+
+        .email-body {
+            padding: 1rem;
+        }
+
+        .input-group {
+            margin-bottom: 1rem;
+        }
+
+        .email-input {
+            width: 90%;
+            padding: 0.5rem 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            font-size: 1rem;
+        }
+
+        .email-textarea {
+            width: 90%;
+            padding: 0.5rem 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            font-size: 1rem;
+            resize: none;
+            height: 10rem;
+            min-height: 3rem;
+        }
+
+        .email-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .action-button {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 0.375rem;
+            font-size: 1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .send-button {
+            background-color: #3b82f6;
+            color: white;
+        }
+
+        .send-button:hover {
+            background-color: #2563eb;
+        }
+
+        .generate-button {
+            background-color: #10b981;
+            color: white;
+        }
+
+        .generate-button:hover {
+            background-color: #059669;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sign Up Form -->
+    <div class="auth-container" id="signupFormContainer">
+        <div class="auth-header">Sign Up</div>
+        <form id="signupForm">
+            <div class="input-group">
+                <input type="text" id="name" class="auth-input" placeholder="Full Name" required>
+            </div>
+            <div class="input-group">
+                <input type="email" id="email" class="auth-input" placeholder="Email" required>
+            </div>
+            <div class="input-group">
+                <input type="tel" id="phone" class="auth-input" placeholder="Phone Number" required>
+            </div>
+            <div class="input-group">
+                <input type="password" id="password" class="auth-input" placeholder="Password" required>
+            </div>
+            <div class="input-group">
+                <input type="password" id="confirmPassword" class="auth-input" placeholder="Confirm Password" required>
+            </div>
+            <button type="submit" class="submit-button">Sign Up</button>
+        </form>
+        <p id="errorMessage" class="error-message" style="display:none;">Passwords do not match.</p>
+        <button class="login-button" onclick="showLogin()">Already a user? Login</button>
+    </div>
+
+    <!-- Login Form -->
+    <div class="auth-container" id="loginFormContainer" style="display: none;">
+        <div class="auth-header">Login</div>
+        <div class="input-group">
+            <input type="text" id="username" class="auth-input" placeholder="Username">
+        </div>
+        <div class="input-group">
+            <input type="password" id="loginPassword" class="auth-input" placeholder="Password">
+        </div>
+        <a href="#" class="forgot-password" onclick="showForgotPassword()">Forgot Password?</a>
+        <button class="submit-button" onclick="login()">Login</button>
+    </div>
+
+    <!-- Forgot Password Form -->
+    <div class="auth-container" id="forgotPasswordFormContainer" style="display: none;">
+        <div class="auth-header">Forgot Password</div>
+        <p>Please enter your username and email to reset your password.</p>
+        <div class="input-group">
+            <input type="text" id="forgotUsername" class="auth-input" placeholder="Username">
+        </div>
+        <div class="input-group">
+            <input type="email" id="forgotEmail" class="auth-input" placeholder="Email">
+        </div>
+        <button id="submitButton" class="submit-button" onclick="startTimer()">Submit</button>
+        <div id="timer" class="timer" style="display: none;">01:00</div>
+    </div>
+
+    <!-- Navbar to display username after login -->
+    <div class="navbar" id="navbar" style="display: none;">
+        <span>Welcome, <span id="userNameDisplay"></span></span>
+    </div>
+
+    <!-- Email Compose -->
+    <div class="email-compose" id="emailCompose" style="display: none;">
+        <div class="email-header">
+            <div class="email-title">Compose Email</div>
+        </div>
+        <div class="email-body">
+            <div class="input-group">
+                <input type="text" class="email-input" placeholder="Email ID" id="emailTo">
+            </div>
+            <div class="input-group">
+                <input type="text" class="email-input" placeholder="Subject" id="emailSubject">
+            </div>
+            <div class="input-group">
+                <textarea class="email-textarea" placeholder="Write your email..." id="emailBody"></textarea>
+            </div>
+            <div class="email-actions">
+                <div class="action-buttons">
+                    <button class="action-button send-button" onclick="sendEmail()">Send</button>
+                    <button class="action-button generate-button" onclick="generateTemplate()">Generate</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let emailCompose = document.getElementById("emailCompose");
+        let navbar = document.getElementById("navbar");
+        let userNameDisplay = document.getElementById("userNameDisplay");
+
+        let users = [
+            { username: 'kushal', password: '12345678' },
+            { username: 'sathvik', password: '12345678' }
+            
+        ];
+
+        function showLogin() {
+            document.getElementById("signupFormContainer").style.display = "none";
+            document.getElementById("loginFormContainer").style.display = "block";
+        }
+
+        function login() {
+            let username = document.getElementById("username").value;
+            let password = document.getElementById("loginPassword").value;
+
+            let user = users.find(u => u.username === username && u.password === password);
+
+            if (user) {
+                document.getElementById("loginFormContainer").style.display = "none";
+                navbar.style.display = "block";
+                userNameDisplay.innerText = user.username;
+                emailCompose.style.display = "block";
+            } else {
+                alert("Invalid credentials.");
+            }
+        }
+
+        function showForgotPassword() {
+            document.getElementById("loginFormContainer").style.display = "none";
+            document.getElementById("forgotPasswordFormContainer").style.display = "block";
+        }
+
+        function startTimer() {
+    let timerElement = document.getElementById("timer");
+    let submitButton = document.getElementById("submitButton");
+    let countdown = 60; // Set timer to 60 seconds
+    timerElement.style.display = "block";
+    submitButton.style.visibility = "hidden"; // Hide the Submit button but keep its space reserved
+
+    let interval = setInterval(function () {
+        countdown--;
+        timerElement.innerText = `00:${countdown < 10 ? '0' + countdown : countdown}`;
+        if (countdown === 0) {
+            clearInterval(interval);
+            timerElement.style.display = "none"; // Hide the timer after 60 seconds
+            submitButton.style.visibility = "visible"; // Make the Submit button visible again in the same place
+        }
+    }, 1000);
+}
+
+        function sendEmail() {
+            alert('Email Sent!');
+        }
+
+        function generateTemplate() {
+            document.getElementById("emailSubject").value = 'Important Update';
+            document.getElementById("emailBody").value = 'Dear User,\n\nThis is an important update regarding your account.\n\nBest regards.';
+        }
+    </script>
+</body>
+</html>

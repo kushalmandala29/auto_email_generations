@@ -1,3 +1,4 @@
+
 name: CI/CD to EC2 (Selective)
 
 on:
@@ -41,5 +42,5 @@ jobs:
         host: ${{ secrets.EC2_HOST }}
         username: ${{ secrets.EC2_USERNAME }}
         key: ${{ secrets.EC2_SSH_KEY }}
-        source: "/"  # Specify files or directory to copy
-        target: "/"  # Specify destination path on EC2 instance
+        source: "."  # Specify files or directory to copy
+        target: "/home/ubuntu/Projects"  # Specify destination path on EC2 instance
