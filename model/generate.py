@@ -2,7 +2,7 @@ import os
 # from langchain.llms import Ollama
 from langchain.chains import LLMChain
 # from test_generate import ModelConfig
-
+from langchain_ollama.llms import OllamaLLM
 from langchain.prompts import PromptTemplate
 from langchain_ollama.llms import OllamaLLM
 from langchain.callbacks.base import BaseCallbackHandler
@@ -40,29 +40,24 @@ class DataStructurer:
 
     def _create_prompt_template(self):
         """Defines the prompt template for structuring unstructured input data."""
-        return PromptTemplate(
-            template="""
-            You are an AI assistant tasked with taking unstructured input data and transforming it into a structured format. The input data will be provided as a raw string. Your goal is to extract the relevant information and organize it into a coherent output.
+        remail_prompt = PromptTemplate(
+    template = """You are a professional email writer. Based on this request: {input_text}
 
-            The output should be in the following format:
-            ```json
-            {{
-              "context": "<context of the input data>",
-              "tone": "<tone to be used, defaulting to 'professional but friendly' if not specified>",
-              "purpose": "<purpose or intent of the input data>",
-                }}
+Please write an email that includes:
+1. A professional email body
+2. An appropriate signature
 
-            If any required information (context, tone, or purpose) is missing from the input, please use the following default values:
-            - Context: "Unknown"
-            - Tone: "professional but friendly"
-            - Purpose: "Unknown"
+Keep the tone professional and the content concise.
 
-            Input: {input}
+Format your response as:
 
-            Output:
-            """,
-            input_variables=["input"]
-        )
+[Email body]
+
+[Signature]
+""",
+    input_variables=["input_text"]
+)
+        return remail_prompt
 
     def _create_structuring_chain(self):
         """Creates the LLMChain for structuring data using the defined LLM and prompt template."""
@@ -79,7 +74,7 @@ class DataStructurer:
             dict: The structured output data.
         """
         output = self.structuring_chain.invoke(input_text)
-        return output
+        return output['text']
         # try:
         #     output = self.structuring_chain.invoke(input_text)
         #     return output
