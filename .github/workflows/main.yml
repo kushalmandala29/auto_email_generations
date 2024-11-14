@@ -5,7 +5,6 @@ on:
     branches: [ "main" ]
 
 jobs:
-
   build:
     runs-on: ubuntu-latest
     
@@ -21,9 +20,9 @@ jobs:
       run: |
         pip install -r requirements.txt
         
-   
   deploy:
     needs: build
+    runs-on: ubuntu-latest
     
     env:
       AWS_REGION: us-east-1
@@ -31,32 +30,16 @@ jobs:
       EC2_USERNAME: ${{ secrets.EC2_USERNAME }}
       SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
       
-    runs-on: ubuntu-latest
-    
     steps:
     - uses: actions/checkout@v3
       with:
-        # Only checkout specific files
-        fetch-depth: 1
-    
-        
-    - name: Deploy to EC2
-      env:
-        EC2_HOST: ${{ env.EC2_HOST }}
-        EC2_USERNAME: ${{ env.EC2_USERNAME }}
-        SSH_PRIVATE_KEY: ${{ env.SSH_PRIVATE_KEY }}
-      run: |
-        # Install necessary dependencies
-        sudo apt-get update
-        sudo apt-get install -y openssh-client
-        
-        # Configure SSH key
-        mkdir -p ~/.ssh
-        echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
-        chmod 600 ~/.ssh/id_rsa
-        
-        # Copy only the relevant files to EC2 instance
-        scp -o StrictHostKeyChecking=no -r templates model requirements.txt app.py $EC2_USERNAME@$EC2_HOST:/path/to/app
-        
-        # Run application on EC2 instance
-        ssh -o StrictHostKeyChecking=no $EC2_USERNAME@$EC2_HOST 'cd /path/to/app && pip install -r requirements.txt && python3 app.py'
+        fetch-depth: 1  # Only the latest commit is fetched for efficiency
+
+    - name: Copy files to EC2
+      uses: appleboy/scp-action@master
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ${{ secrets.EC2_USERNAME }}
+        key: ${{ secrets.EC2_SSH_KEY }}
+        source: "/"  # Specify files or directory to copy
+        target: "/"  # Specify destination path on EC2 instance
