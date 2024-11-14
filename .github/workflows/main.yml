@@ -3,11 +3,6 @@ name: CI/CD to EC2 (Selective)
 on:
   push:
     branches: [ "main" ]
-    paths:
-      - 'model/**'
-      - 'templates/**'
-      - 'requirements.txt'
-      - 'app.py'
 
 jobs:
 
